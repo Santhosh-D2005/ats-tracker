@@ -714,20 +714,21 @@ async function toDocx(B){
   return z.generateAsync({type:"arraybuffer",compression:"DEFLATE"});
 }
 
-function toPdf(B){
+function toPdf(B,opt){
   if(!window.jspdf) throw new Error("lib");
   const d=new window.jspdf.jsPDF({unit:"pt",format:"a4"});
-  const W=d.internal.pageSize.getWidth(),H=d.internal.pageSize.getHeight(),M=44,CW=W-2*M;
+  const W=d.internal.pageSize.getWidth(),H=d.internal.pageSize.getHeight(),M=(opt&&opt.compact)?34:44,CW=W-2*M,K=(opt&&opt.compact)?0.93:1;
   let y=M;
   const ensure=h=>{if(y+h>H-M){d.addPage();y=M}};
   const text=(s,size,style,indent,color,font)=>{
+    size=size*K;
     d.setFont(font||"helvetica",style||"normal");d.setFontSize(size);d.setTextColor.apply(d,color||[19,26,38]);
-    const lh=size*1.38;
+    const lh=size*(K<1?1.26:1.38);
     d.splitTextToSize(latin(s),CW-(indent||0)).forEach(ln=>{ensure(lh);d.text(ln,M+(indent||0),y+size);y+=lh});
   };
   B.forEach(b=>{
     if(b.k==="h1"){text(b.t,20,"bold");y+=2;d.setDrawColor(200);d.line(M,y,W-M,y);y+=8}
-    else if(b.k==="h2"){y+=10;ensure(34);text(b.t,13,"bold",0,[168,84,26]);y+=2}
+    else if(b.k==="h2"){y+=(K<1?6:10);ensure(34);text(b.t,13,"bold",0,[168,84,26]);y+=2}
     else if(b.k==="p"){text(b.t,10,"normal");y+=4}
     else if(b.k==="q"){text(b.t,9,"italic",10,[90,101,120]);y+=6}
     else if(b.k==="code"){d.setFont("courier","normal");d.setFontSize(8.5);d.setTextColor(40,48,62);
@@ -895,7 +896,7 @@ function render(r,fileName,example){
       const k=$("#exFmt").value,msg=$("#exMsg"),e=EX[example];
       msg.textContent="Preparing ...";
       try{
-        const data=k==="txt"?e.text:k==="pdf"?toPdf(resumeBlocks(e.text)):await toDocx(resumeBlocks(e.text));
+        const data=k==="txt"?e.text:k==="pdf"?toPdf(resumeBlocks(e.text),{compact:1}):await toDocx(resumeBlocks(e.text));
         await saveFile(e.file+"."+k,data,k==="txt"?"text/plain":k==="pdf"?"application/pdf":FORMATS.docx.mime);
         msg.textContent="Saved. Edit it with your own details, then scan it to confirm the score.";
       }catch(x){msg.textContent=(x&&x.code==="declined")?"Save cancelled.":"Could not create the file here. Use Copy text instead."}
