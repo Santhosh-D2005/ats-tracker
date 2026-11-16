@@ -764,6 +764,111 @@ function toPdf(B,opt){
   return d.output("arraybuffer");
 }
 
+const BUL=String.fromCharCode(8226);
+function parseResume(text){
+  const L=text.split("\n").map(l=>l.replace(/\s+$/,"")),out=[];
+  const HEAD=/^(SUMMARY|SKILLS|EXPERIENCE|PROJECTS|EDUCATION|CERTIFICATIONS|LANGUAGES)$/;
+  const DATE=/^(.*\S)\s+-\s+((?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s+\d{4})$/;
+  let sec="",idx=0,eduFirst=true;
+  L.forEach(l=>{
+    const tr=l.trim();if(!tr)return;
+    if(idx===0){out.push({t:"name",text:tr});idx++;return}
+    idx++;
+    if(HEAD.test(tr)){sec=tr;out.push({t:"sec",text:tr});return}
+    if(!sec){out.push({t:"contact",text:tr});return}
+    if(tr.startsWith(BUL+" ")){out.push({t:"bullet",text:tr.slice(2)});return}
+    if(sec==="SUMMARY"||sec==="CERTIFICATIONS"||sec==="LANGUAGES"){out.push({t:"para",text:tr});return}
+    const kv=tr.match(/^([A-Za-z][A-Za-z &\/()-]{1,40}):\s+(.+)$/);
+    if(sec==="SKILLS"||(kv&&sec==="EDUCATION")){if(kv)out.push({t:"kv",label:kv[1]+":",value:kv[2]});else out.push({t:"para",text:tr});return}
+    if(sec==="EDUCATION"){
+      if(eduFirst){eduFirst=false;out.push({t:"row",left:tr,right:"",style:"bold"});return}
+      const q=tr.split(" | ");out.push({t:"row",left:q[0],right:q[1]||"",style:"normal"});return
+    }
+    const pipe=tr.indexOf(" | ");
+    if(pipe>=0){out.push({t:"row",left:tr.slice(0,pipe),right:tr.slice(pipe+3),style:"italic"});return}
+    const m=tr.match(DATE);
+    if(m){out.push({t:"row",left:m[1],right:m[2],style:"bold"});return}
+    out.push({t:"row",left:tr,right:"",style:"bold"});
+  });
+  return out;
+}
+
+function toResumePdf(text){
+  if(!window.jspdf) throw new Error("lib");
+  const items=parseResume(text);
+  const render=sc=>{
+    const d=new window.jspdf.jsPDF({unit:"pt",format:"a4"});
+    const W=595.28,H=841.89,M=38,CW=W-2*M,fs=9.8*sc,lh=fs*1.32;
+    let y=M,prev="";
+    const ensure=h=>{if(y+h>H-M){d.addPage();y=M}};
+    const setf=(st,size)=>{d.setFont("helvetica",st);d.setFontSize(size)};
+    const wrap=(s,w,st,size)=>{setf(st,size);return d.splitTextToSize(latin(s),w)};
+    items.forEach(it=>{
+      if(it.t==="name"){setf("bold",21*sc);d.setTextColor(0);d.text(latin(it.text),W/2,y+17*sc,{align:"center"});y+=27*sc}
+      else if(it.t==="contact"){setf("normal",9*sc);d.setTextColor(70);d.text(latin(it.text),W/2,y+8*sc,{align:"center"});y+=12.5*sc}
+      else if(it.t==="sec"){y+=8*sc;ensure(26);setf("bold",10.8*sc);d.setTextColor(0);d.text(it.text,M,y+9*sc);y+=13*sc;d.setDrawColor(40);d.setLineWidth(0.7);d.line(M,y,W-M,y);y+=4*sc}
+      else if(it.t==="para"){d.setTextColor(25);wrap(it.text,CW,"normal",fs).forEach(l=>{ensure(lh);setf("normal",fs);d.text(l,M,y+fs);y+=lh})}
+      else if(it.t==="kv"){
+        setf("bold",fs);const lw=d.getTextWidth(latin(it.label))+4;
+        const ls=wrap(it.value,CW-lw,"normal",fs);ensure(lh*ls.length);
+        setf("bold",fs);d.setTextColor(0);d.text(latin(it.label),M,y+fs);
+        d.setTextColor(25);ls.forEach((l,i)=>{setf("normal",fs);d.text(l,M+lw,y+fs+i*lh)});
+        y+=lh*ls.length;
+      }
+      else if(it.t==="bullet"){
+        const ls=wrap(it.text,CW-16,"normal",fs);ensure(lh*ls.length);
+        d.setFillColor(25);d.circle(M+7,y+fs*0.62,1.1,"F");
+        d.setTextColor(25);ls.forEach((l,i)=>{setf("normal",fs);d.text(l,M+16,y+fs+i*lh)});
+        y+=lh*ls.length;
+      }
+      else if(it.t==="row"){
+        if(it.style==="bold"&&prev==="bullet")y+=4*sc;
+        setf("normal",fs);const rw=it.right?d.getTextWidth(latin(it.right)):0;
+        const sz=it.style==="bold"?fs*1.06:fs;
+        const ls=wrap(it.left,CW-rw-12,it.style,sz);ensure(lh*ls.length);
+        d.setTextColor(it.style==="bold"?0:25);
+        ls.forEach((l,i)=>{setf(it.style,sz);d.text(l,M,y+sz+i*lh)});
+        if(it.right){setf("normal",fs);d.setTextColor(70);d.text(latin(it.right),W-M,y+sz,{align:"right"})}
+        y+=lh*ls.length;
+      }
+      prev=it.t;
+    });
+    return d;
+  };
+  let d;
+  for(const sc of [1,0.96,0.92,0.88,0.84]){d=render(sc);if(d.getNumberOfPages()===1)break}
+  return d.output("arraybuffer");
+}
+
+async function toResumeDocx(text){
+  if(!window.JSZip) throw new Error("lib");
+  const items=parseResume(text);
+  const x=s=>String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  const r=(t,o)=>{o=o||{};return '<w:r><w:rPr><w:rFonts w:ascii="Calibri" w:hAnsi="Calibri" w:cs="Calibri"/>'+(o.b?"<w:b/>":"")+(o.i?"<w:i/>":"")+(o.color?'<w:color w:val="'+o.color+'"/>':"")+'<w:sz w:val="'+(o.sz||20)+'"/></w:rPr><w:t xml:space="preserve">'+x(t)+"</w:t></w:r>"};
+  const tab='<w:r><w:tab/></w:r>';
+  const p=(inner,o)=>{o=o||{};return "<w:p><w:pPr>"+(o.keep?"<w:keepNext/>":"")+(o.rule?'<w:pBdr><w:bottom w:val="single" w:sz="6" w:space="1" w:color="282828"/></w:pBdr>':"")+(o.rtab?'<w:tabs><w:tab w:val="right" w:pos="9900"/></w:tabs>':"")+'<w:spacing w:before="'+(o.before||0)+'" w:after="'+(o.after==null?20:o.after)+'"/>'+(o.ind?'<w:ind w:left="'+o.ind+'" w:hanging="'+(o.hang||0)+'"/>':"")+(o.center?'<w:jc w:val="center"/>':"")+"</w:pPr>"+inner+"</w:p>"};
+  const out=[];let prev="";
+  items.forEach(it=>{
+    if(it.t==="name")out.push(p(r(it.text,{b:1,sz:42}),{center:1,after:40}));
+    else if(it.t==="contact")out.push(p(r(it.text,{sz:18,color:"464646"}),{center:1,after:10}));
+    else if(it.t==="sec")out.push(p(r(it.text,{b:1,sz:21}),{rule:1,keep:1,before:150,after:60}));
+    else if(it.t==="para")out.push(p(r(it.text),{after:30}));
+    else if(it.t==="kv")out.push(p(r(it.label+" ",{b:1})+r(it.value),{after:20}));
+    else if(it.t==="bullet")out.push(p(r(BUL)+tab+r(it.text),{ind:360,hang:240,after:20}));
+    else if(it.t==="row"){
+      const o={rtab:1,after:10,before:(it.style==="bold"&&prev==="bullet")?90:30,keep:1};
+      out.push(p(r(it.left,{b:it.style==="bold",i:it.style==="italic",sz:it.style==="bold"?21:20})+(it.right?tab+r(it.right,{color:"464646"}):""),o));
+    }
+    prev=it.t;
+  });
+  const doc='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>'+out.join("")+'<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="700" w:right="1000" w:bottom="700" w:left="1000" w:header="500" w:footer="500" w:gutter="0"/></w:sectPr></w:body></w:document>';
+  const z=new JSZip();
+  z.file("[Content_Types].xml",'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>');
+  z.file("_rels/.rels",'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>');
+  z.file("word/document.xml",doc);
+  return z.generateAsync({type:"arraybuffer",compression:"DEFLATE"});
+}
+
 function toCsv(r){
   const q=s=>'"'+String(s).replace(/"/g,'""')+'"';
   const rows=[["Severity","Category","Issue","Points recoverable","Why it matters","How to fix"]];
@@ -896,7 +1001,7 @@ function render(r,fileName,example){
       const k=$("#exFmt").value,msg=$("#exMsg"),e=EX[example];
       msg.textContent="Preparing ...";
       try{
-        const data=k==="txt"?e.text:k==="pdf"?toPdf(resumeBlocks(e.text),{compact:1}):await toDocx(resumeBlocks(e.text));
+        const data=k==="txt"?e.text:k==="pdf"?toResumePdf(e.text):await toResumeDocx(e.text);
         await saveFile(e.file+"."+k,data,k==="txt"?"text/plain":k==="pdf"?"application/pdf":FORMATS.docx.mime);
         msg.textContent="Saved. Edit it with your own details, then scan it to confirm the score.";
       }catch(x){msg.textContent=(x&&x.code==="declined")?"Save cancelled.":"Could not create the file here. Use Copy text instead."}
