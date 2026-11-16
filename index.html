@@ -89,6 +89,7 @@ details summary{cursor:pointer;font-weight:500}
 @media(max-width:700px){.two{grid-template-columns:minmax(0,1fr)}}
 .dlrow{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 select{background:var(--surface2);color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:6px 8px;font:13px var(--font);max-width:100%}
+.exrow{margin-top:16px;padding-top:12px;border-top:1px solid var(--line)}
 .sample-note{font-family:var(--mono);font-size:12px;color:var(--warn);background:var(--warn-bg);border-radius:6px;padding:7px 10px}
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
@@ -108,7 +109,7 @@ select{background:var(--surface2);color:var(--fg);border:1px solid var(--line);b
           <b>Drop a resume or click to browse</b>
           <span>PDF, DOCX or TXT</span>
         </label>
-        <div class="file-status" id="fileStatus">No file yet. A sample resume is loaded.</div>
+        <div class="file-status" id="fileStatus">No file yet.</div>
         <label class="l" for="paste">Or paste resume text</label>
         <textarea id="paste" placeholder="Paste plain text here"></textarea>
 
@@ -116,6 +117,7 @@ select{background:var(--surface2);color:var(--fg);border:1px solid var(--line);b
         <textarea id="jd" placeholder="Paste the job posting to get a role-specific keyword match"></textarea>
         <button class="btn" id="scan">Scan resume</button>
         <div class="err" id="err" role="alert"></div>
+        <div class="exrow"><div class="tag" style="margin-bottom:8px">Resumes that score 100/100</div><div class="dlrow"><button class="btn2" id="exFresher">Fresher example</button><button class="btn2" id="exExp">Experienced example</button></div></div>
         <p class="note">Parsing mimics what Workday, Greenhouse, Lever and Taleo do first: extract text, find sections, read dates, match keywords.</p>
       </div>
     </aside>
@@ -135,27 +137,80 @@ const $=s=>document.querySelector(s);
 const h=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const esc=s=>s.replace(/[.*+?^${}()|[\]\\\/]/g,"\\$&");
 
-const SAMPLE=`JOHN DOE
-Software Developer
-john.doe@example.com | linkedin
+const EX={
+fresher:{label:"Fresher",file:"Fresher_Resume_Example",text:`AARAV MEHTA
+Hyderabad, Telangana, India | +91 98765 43210 | aarav.mehta@example.com
+linkedin.com/in/aarav-mehta | github.com/aarav-mehta
 
-Objective
-I am a hard working person looking for a job where I can use my skills and grow with the company.
+SUMMARY
+Computer Science graduate with hands-on Java, Spring Boot and React experience from a 3-month internship and two deployed projects. Built REST APIs serving 500+ student records and solved 150+ DSA problems on LeetCode. Seeking a Software Engineer role.
 
-Work History
-Software Intern - Acme Corp
-Responsible for developing features for the web app. Worked on the login page.
-Helped the team with bug fixes. Duties included managment of the database.
+SKILLS
+Languages: Java, Python, JavaScript, SQL
+Web: React, HTML, CSS, REST APIs, Spring Boot
+Databases: MySQL, MongoDB
+Tools: Git, GitHub, Docker, Postman, VS Code
+Core: Data Structures, Algorithms, OOP, Agile
 
-Projects
-Library App
-Built an app to manage books.
+EXPERIENCE
+Software Engineer Intern
+Brightwave Technologies, Hyderabad | Jun 2025 - Aug 2025
+• Built 12 REST API endpoints in Spring Boot and MySQL that served 500+ student records with under 200 ms response time.
+• Reduced duplicate database queries by 35% by adding Spring Data JPA caching.
+• Collaborated with 4 developers in 2-week Agile sprints and delivered 3 front-end features in React.
+• Wrote 40+ JUnit tests, raising backend test coverage from 45% to 82%.
 
-Education
-B.Tech Computer Science, Some Institute of Technology
+PROJECTS
+Student Management System (Java, Spring Boot, MySQL, React) - Jul 2025
+• Developed a full-stack app with role-based login that manages 500+ student records for 3 user roles.
+• Implemented search and pagination that cut page load time by 40%.
+Cloud Data Security Tool (Python, AES-256) - Jan 2026
+• Built an encryption tool with AES-256 that protects uploaded files and secures 100+ test files.
+• Added keyword search over encrypted data, returning results in under 1 second.
 
-Additional Information
-Skills: Java, Python, HTML`;
+EDUCATION
+Bachelor of Technology in Computer Science, Example Institute of Technology, Hyderabad
+Aug 2022 - May 2026 | CGPA 8.2/10
+
+CERTIFICATIONS
+Python for Data Science, Coursera, 2025
+Generative AI Fundamentals, 2025`},
+experienced:{label:"Experienced",file:"Experienced_Resume_Example",text:`NEHA KAPOOR
+Bengaluru, Karnataka, India | +91 98123 45678 | neha.kapoor@example.com
+linkedin.com/in/neha-kapoor | github.com/neha-kapoor
+
+SUMMARY
+Backend engineer with 6 years of experience building Java and Spring Boot microservices on AWS. Led a team of 5 to cut API latency by 45% and built pipelines that process 2M+ transactions per day. Seeking a Senior Software Engineer role.
+
+SKILLS
+Languages: Java, Python, SQL, JavaScript
+Backend: Spring Boot, Hibernate, REST APIs, Microservices, Kafka
+Databases: PostgreSQL, MySQL, Redis, MongoDB
+Cloud and DevOps: AWS, Docker, Kubernetes, Jenkins, CI/CD, Terraform
+Quality: JUnit, Selenium, Unit Testing, Agile, Scrum
+
+EXPERIENCE
+Senior Software Engineer
+Northwind Systems, Bengaluru | Mar 2022 - Present
+• Led a team of 5 engineers to migrate a monolith into 14 Spring Boot microservices, cutting deployment time from 3 hours to 20 minutes.
+• Reduced API latency by 45% by adding Redis caching and optimizing 30+ SQL queries.
+• Designed an event pipeline on Kafka that processes 2M+ transactions per day with 99.95% uptime.
+• Mentored 6 junior engineers and ran code reviews that lowered production defects by 28%.
+Software Engineer
+Crestline Technologies, Hyderabad | Jul 2019 - Feb 2022
+• Built 25+ REST APIs in Java and Spring Boot that supported 150,000 monthly active users.
+• Automated regression testing with Selenium and JUnit, saving 12 hours of manual testing every release.
+• Containerized 8 services with Docker and set up Jenkins CI/CD pipelines that shortened release cycles by 50%.
+• Resolved 120+ production tickets with an average resolution time under 24 hours.
+
+EDUCATION
+Bachelor of Technology in Computer Science, Example Institute of Technology, Hyderabad
+Aug 2015 - May 2019 | CGPA 8.5/10
+
+CERTIFICATIONS
+AWS Certified Developer Associate, 2023
+Certified Kubernetes Application Developer, 2024`}
+};
 
 /* ---------- Dictionaries ---------- */
 const SKILLS=["java","python","javascript","typescript","c","c++","c#","go","rust","kotlin","swift","php","ruby","scala","sql","mysql","postgresql","mongodb","oracle","redis","nosql","html","css","react","react.js","angular","vue","node.js","express","spring boot","spring","hibernate","jpa","django","flask","fastapi","rest","restful","graphql","microservices","aws","azure","gcp","docker","kubernetes","jenkins","ci/cd","git","github","gitlab","linux","agile","scrum","jira","junit","selenium","postman","testing","unit testing","tableau","power bi","excel","ms excel","pandas","numpy","tensorflow","pytorch","machine learning","deep learning","nlp","data analysis","data structures","algorithms","oop","api","devops","terraform","ansible","kafka","spark","hadoop","etl","data warehousing","statistics","problem solving","communication","leadership","teamwork","quality assurance","quality control","six sigma","root cause analysis","iso 9001","spc","fmea","generative ai","prompt engineering","cybersecurity","encryption","cloud security","networking","dbms","eclipse","vs code","figma","responsive design","debugging","automation","analytics","reporting"];
@@ -384,7 +439,7 @@ function analyze(text,meta,jd,fileName){
   const reNum=/\b(?:0?[1-9]|1[0-2])\/(?:19|20)\d{2}\b/g;
   const reYR=/\b(?:19|20)\d{2}\s*(?:[-–—]|to)\s*(?:(?:19|20)\d{2}|present|current|now)\b/gi;
   const expText=[...(secs.experience||[]),...(secs.projects||[])].join("\n")||flat;
-  const nMon=(expText.match(reMonY)||[]).length,nNum=(expText.match(reNum)||[]).length,nYr=(expText.match(reYR)||[]).length;
+  const nMon=(expText.match(reMonY)||[]).length,nNum=(expText.match(reNum)||[]).length,nYr=(expText.replace(reMonY," ").match(reYR)||[]).length;
   const fmts=[nMon>0,nNum>0,nYr>0].filter(Boolean).length;
   const ranges=[...flat.matchAll(new RegExp("("+MON+"\\.?\\s+(?:19|20)\\d{2}|(?:0?[1-9]|1[0-2])\\/(?:19|20)\\d{2}|(?:19|20)\\d{2})\\s*(?:[-–—]|to)\\s*("+MON+"\\.?\\s+(?:19|20)\\d{2}|(?:0?[1-9]|1[0-2])\\/(?:19|20)\\d{2}|(?:19|20)\\d{2}|present|current|now)","gi"))].map(m=>m[0]);
   const hasExp=hasHead("experience")||/intern|engineer|developer|trainee/i.test(flat);
@@ -746,9 +801,18 @@ async function saveFile(name,data,mime){
   setTimeout(()=>URL.revokeObjectURL(a.href),4000);
 }
 
+function resumeBlocks(text){
+  const HEAD=/^(SUMMARY|SKILLS|EXPERIENCE|PROJECTS|EDUCATION|CERTIFICATIONS)$/;
+  return text.split("\n").map((l,i)=>l.trim()?(i===0?{k:"h1",t:l}:HEAD.test(l.trim())?{k:"h2",t:l}:{k:"p",t:l}):null).filter(Boolean);
+}
+function exampleCard(k){
+  const e=EX[k];
+  return '<div class="card"><h2>'+e.label+' resume example</h2><p class="note" style="margin:0 0 10px">One column, standard headings, dates as Mon YYYY, and an action verb plus a number in every bullet. All names, employers and figures are made up. Replace them with your own facts.</p><div class="dlrow"><label for="exFmt" class="tag">Format</label><select id="exFmt"><option value="docx">Word (.docx)</option><option value="pdf">PDF (.pdf)</option><option value="txt">Plain text (.txt)</option></select><button class="btn2" id="exDl" style="background:var(--accent);color:var(--accent-fg);border-color:var(--accent)">Download this resume</button><button class="btn2" id="exCopy">Copy text</button></div><div id="exMsg" class="note" role="status"></div><pre class="txt">'+h(e.text)+'</pre></div>';
+}
+
 /* ---------- Rendering ---------- */
 const colour=v=>v>=80?"var(--good)":v>=65?"var(--warn)":"var(--crit)";
-function render(r,fileName,isSample){
+function render(r,fileName,example){
   const band=r.total>=80?["v-good","Likely to pass"]:r.total>=65?["v-warn","Borderline"]:["v-crit","Likely to be rejected"];
   const C=2*Math.PI*72,off=C*(1-r.total/100);
   const n={critical:0,warning:0,tip:0};r.issues.forEach(i=>n[i.sev]++);
@@ -776,10 +840,11 @@ function render(r,fileName,isSample){
   const prof='<dl class="kv"><dt>Name</dt><dd'+(I.name?'':' class="bad"')+'>'+h(I.name||"Not detected")+'</dd><dt>Email</dt><dd'+(I.email?'':' class="bad"')+'>'+h(I.email||"Not detected")+'</dd><dt>Phone</dt><dd'+(I.phone?'':' class="bad"')+'>'+h(I.phone||"Not detected")+'</dd><dt>LinkedIn</dt><dd'+(I.linkedin?'':' class="bad"')+'>'+h(I.linkedin||"Not detected")+'</dd><dt>GitHub</dt><dd>'+h(I.github||"Not detected")+'</dd><dt>Date ranges</dt><dd'+(I.ranges.length?'':' class="bad"')+'>'+(I.ranges.length?h(I.ranges.join("; ")):"None detected")+'</dd><dt>Sections</dt><dd><div class="chips">'+secList+missSec+'</div></dd><dt>Word count</dt><dd>'+I.words+(I.pages?' · '+I.pages+' page'+(I.pages>1?'s':''):'')+'</dd></dl>';
   const res=$("#results");
   res.innerHTML=
-   (isSample?'<div class="sample-note">Showing a sample resume with common mistakes. Upload yours on the left.</div>':'')+
+   (example?'<div class="sample-note">Example resume built to score 100/100. Replace the details with your own facts.</div>':'')+
    '<div class="card hero"><div class="ring"><svg viewBox="0 0 168 168" aria-hidden="true"><circle cx="84" cy="84" r="72" fill="none" stroke="var(--surface2)" stroke-width="14"/><circle cx="84" cy="84" r="72" fill="none" stroke="'+colour(r.total)+'" stroke-width="14" stroke-linecap="round" stroke-dasharray="'+C.toFixed(1)+'" stroke-dashoffset="'+off.toFixed(1)+'"/></svg><div class="num"><b>'+r.total+'</b><span>ATS SCORE / 100</span></div></div>'+
    '<div><span class="verdict '+band[0]+'">'+band[1]+'</span><h3>'+h(fileName||"Resume")+'</h3><p style="margin:4px 0 0;color:var(--muted);font-size:14px">'+(r.capped?'Score capped at 64 because knockout problems are present. ATS filters reject on these before keyword ranking starts.':r.total>=80?'Your resume parses cleanly and ranks well. Tailor keywords to each posting.':'Fixing the items below can add about '+recover+' points.')+'</p><div class="counts"><span style="color:var(--crit)"><i>'+n.critical+'</i> critical</span><span style="color:var(--warn)"><i>'+n.warning+'</i> warnings</span><span style="color:var(--tip)"><i>'+n.tip+'</i> tips</span></div><div style="margin-top:12px"><div class="dlrow"><label for="fmt" class="tag">Format</label><select id="fmt"><option value="pdf">PDF (.pdf)</option><option value="docx">Word (.docx)</option><option value="md">Markdown (.md), best to give to Claude</option><option value="html">Web page (.html)</option><option value="txt">Plain text (.txt)</option><option value="json">JSON (.json)</option><option value="csv">Issues list (.csv)</option></select><button class="btn2" id="dlRep" style="background:var(--accent);color:var(--accent-fg);border-color:var(--accent)">Download report</button><button class="btn2" id="copyRep">Copy report</button></div></div><div id="dlMsg" class="note" role="status"></div><div id="dlFallback" hidden><p class="note">Saving files is not available in this view. Select all and copy the report below, then paste it to Claude.</p><textarea id="dlText" readonly style="min-height:160px"></textarea></div></div></div>'+
    (topFix.length?'<div class="card"><h2>Fix these first</h2><ol class="fixes">'+topFix.map(i=>'<li><span class="pts">+'+i.loss+'</span><div><b>'+h(i.title)+'</b><span>'+h(i.fix)+'</span></div></li>').join("")+'</ol></div>':'')+
+   (example?exampleCard(example):'')+
    '<div class="card"><h2>Score breakdown</h2><div class="cats">'+catHTML+'</div></div>'+
    '<div class="card"><h2>All issues ('+r.issues.length+')</h2><div class="filters" id="filters"><button class="btn2" aria-pressed="true" data-f="all">All</button><button class="btn2" aria-pressed="false" data-f="critical">Critical</button><button class="btn2" aria-pressed="false" data-f="warning">Warnings</button><button class="btn2" aria-pressed="false" data-f="tip">Tips</button></div><div id="issueList">'+(issueHTML||'<p class="note">No issues found.</p>')+'</div></div>'+
    '<div class="two"><div class="card"><h2>Keyword match</h2>'+kwHTML+'</div><div class="card"><h2>What the ATS extracted</h2>'+prof+'</div></div>'+
@@ -813,18 +878,47 @@ function render(r,fileName,isSample){
     try{await navigator.clipboard.writeText(t);btn.textContent="Copied"}catch(x){btn.textContent="Copy blocked: select text manually"}
     setTimeout(()=>btn.textContent="Copy report",2000);
   });
+  if(example){
+    $("#exCopy").addEventListener("click",async e=>{
+      const b=e.currentTarget;
+      try{await navigator.clipboard.writeText(EX[example].text);b.textContent="Copied"}catch(x){b.textContent="Copy blocked"}
+      setTimeout(()=>b.textContent="Copy text",2000);
+    });
+    $("#exDl").addEventListener("click",async()=>{
+      const k=$("#exFmt").value,msg=$("#exMsg"),e=EX[example];
+      msg.textContent="Preparing ...";
+      try{
+        const data=k==="txt"?e.text:k==="pdf"?toPdf(resumeBlocks(e.text)):await toDocx(resumeBlocks(e.text));
+        await saveFile(e.file+"."+k,data,k==="txt"?"text/plain":k==="pdf"?"application/pdf":FORMATS.docx.mime);
+        msg.textContent="Saved. Edit it with your own details, then scan it to confirm the score.";
+      }catch(x){msg.textContent=(x&&x.code==="declined")?"Save cancelled.":"Could not create the file here. Use Copy text instead."}
+    });
+  }
 }
 
 /* ---------- Wiring ---------- */
-let current={text:SAMPLE,meta:{pages:null,columns:false,links:[],tables:0,images:0,type:"txt"},name:"Sample resume",sample:true};
+const TXTMETA={pages:1,columns:false,links:[],tables:0,images:0,type:"txt"};
+let current=null;
 const err=$("#err");
 function run(){
   err.textContent="";
   const pasted=$("#paste").value.trim();
   let src=current;
-  if(pasted&&(current.sample||!current.file)) src={text:pasted,meta:{pages:null,columns:false,links:[],tables:0,images:0,type:"txt"},name:"Pasted text",sample:false};
-  const r=analyze(src.text,src.meta,$("#jd").value,src.file?src.name:"");
-  render(r,src.name,src.sample);
+  if(pasted&&!(current&&current.file)) src={text:pasted,meta:Object.assign({},TXTMETA,{pages:null}),name:"Pasted text"};
+  if(!src){err.textContent="Upload a resume or paste text first.";return}
+  const jd=src.example?"":$("#jd").value;
+  const r=analyze(src.text,src.meta,jd,src.file?src.name:"");
+  render(r,src.name,src.example||null);
+}
+function loadExample(k){
+  err.textContent="";$("#paste").value="";
+  current={text:EX[k].text,meta:TXTMETA,name:EX[k].label+" example resume",example:k};
+  $("#fileStatus").textContent="Showing the "+EX[k].label.toLowerCase()+" example resume.";
+  run();
+  $("#results").scrollIntoView({behavior:"smooth",block:"start"});
+}
+function renderEmpty(){
+  $("#results").innerHTML='<div class="card"><h2>Scan a resume</h2><h3>See what an ATS sees</h3><p class="note" style="font-size:14px">Upload a PDF, DOCX or TXT resume, or paste its text, then press Scan resume. Add a job description for a role-specific keyword match. You get a score out of 100, the issues that get resumes rejected, and a downloadable fix report.</p><p class="note" style="font-size:14px">Want a model to copy? Open the fresher or the experienced example on the left. Both score 100/100.</p></div>';
 }
 async function handle(file){
   err.textContent="";const st=$("#fileStatus");st.textContent="Reading "+file.name+" ...";
@@ -847,7 +941,9 @@ $("#scan").addEventListener("click",()=>{
   try{run()}catch(e){err.textContent="Scan failed: "+e.message}
   b.disabled=false;
 });
-run();
+$("#exFresher").addEventListener("click",()=>loadExample("fresher"));
+$("#exExp").addEventListener("click",()=>loadExample("experienced"));
+renderEmpty();
 })();
 </script>
 
